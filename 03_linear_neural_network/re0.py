@@ -33,11 +33,14 @@ def linreg(X, w, b):
 def squared_loss(y_hat, y):
     return (y_hat - y.reshape(y_hat.shape)) ** 2 / 2
 
+
 # 优化算法
 def sgd(params, lr, batch_size):
     with torch.no_grad():
         for param in params:
-            param -= lr * param.grad/batch_size
+            param -= lr * param.grad / batch_size
+            param.grad.zero_()
+
 
 if __name__ == '__main__':
     # 生成模拟数据
@@ -51,13 +54,23 @@ if __name__ == '__main__':
     plt.xlabel('Second feature')
     plt.ylabel('Labels')
     plt.show()
-    batch_size = 10
-
-    # 迭代器
-    for X, y in data_iter(batch_size, features, labels):
-        print(X, '\n', y)
-        break
 
     # 初始化模型参数
-    w = torch.normal(0, 0.01, size=(2, 1), requires_grad=True)
+    # w = torch.normal(0, 0.01, size=(2, 1), requires_grad=True)
+    w = torch.zeros((2, 1), requires_grad=True)
     b = torch.zeros(1, requires_grad=True)
+    batch_size = 10
+    lr = 0.03
+    num_epochs = 3
+    net = linreg
+    loss = squared_loss
+
+    for epoch in range(num_epochs):
+        for X, y in data_iter(batch_size, features, labels):
+            #  [batch_size, 1] = [batch_size, 2] * [2, 1] + b
+            l = loss(net(X, w, b), y)
+            l.sum().backward()
+            sgd([w, b], lr, batch_size)
+        with torch.no_grad():
+            train_l = loss(net(features, w, b), labels)
+            print(f'epoch {epoch}, loss {float(train_l.mean()):f}')
