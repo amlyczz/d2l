@@ -1,6 +1,7 @@
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
+
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, **kwargs):
@@ -83,3 +84,36 @@ class InceptionAux(nn.Module):
         x = torch.flatten(x, 1)
         # 设置.train()时为训练模式，self.training=True
         x = F.dropout(x, 0.5, training=self.training)
+        # 输入： N * 2048
+        x = F.relu(self.fc1(x), inplace=True)
+        x = F.dropout(x, 0.5, training=self.training)
+        # 输入：N * 1024
+        x = self.fc2(x)
+        # N * 10
+        return x
+
+
+class GoogLeNet(nn.Module):
+    def __init__(self, num_classes=2, aux_logits=True, init_weights=False):
+        '''
+        init()：进行初始化，申明模型中各层的定义
+        :param num_classes: 需要分类的类别个数
+        :param aux_logits: 训练过程是否使用辅助分类器，init_weights：是否对网络进行权重初始化
+        :param init_weights:初始化权重
+        '''
+        super(GoogLeNet, self).__init__()
+        # aux_logits: 是否使用辅助分类器（训练的时候为True, 验证的时候为False)
+        self.aux_logits = aux_logits
+
+        '''第一部分：一个卷积层＋一个最大池化层'''
+        self.conv1 = BasicConv2d(3, 64, kernel_size=7, stride=2, padding=3)
+        # ceil_mode ：布尔类型，为True，用向上取整的方法，计算输出形状；默认是向下取整。
+        self.maxpool1 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
+
+        '''第二部分：两个卷积层＋一个最大池化层'''
+        self.conv2_1 = BasicConv2d(64, 64, kernel_size=1)
+        self.conv2_2 = BasicConv2d(64, 192, kernel_size=3, padding=1)
+        self.maxpool2 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
+
+        '''第三部分：3a层和3b层＋最大池化层'''
+        self.inception3a = Inception(192, 64, 96, 128, 16, 32, 32)
