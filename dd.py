@@ -1,71 +1,30 @@
-import pandas as pd
-import numpy as np
-from collections import Counter
-from math import log2
+import requests
 
+url = "https://weibo.com/ajax/statuses/mymblog?uid=7707156952&page=0&feature=0"
 
-def entropy(data):
-    label_counts = Counter(data)
-    total = len(data)
-    return -sum((count / total) * log2(count / total) for count in label_counts.values())
+headers = {
+    "accept": "application/json, text/plain, */*",
+    "accept-language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+    "client-version": "v2.45.97",
+    "cookie": "PC_TOKEN=2d40636a22; XSRF-TOKEN=_trnTcTwVtb6hEIAzIdFiP0V; SCF=AiOs4JmA9Zf7cb-b9bynAl7IpXqkrnIksa3zmHU5ufz_U-B9DFD1oMsqgQYNKNKaZ5yR-VRQub02aXjt8GU5gRU.; SUB=_2A25LucArDeRhGeFG6VIQ8yzLwzWIHXVot13jrDV8PUNbmtANLVX5kW9NfggyslVS1Ka1WPnHn8gfW6VjGRPbITrF; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9W5jJhvHrMjoA04QsRBxR_af5NHD95QN1hz7eKeES0n4Ws4Dqcjci--fiKLhi-2Ri--fiKLhi-iWi--NiKLWiKnXi--Xi-zRiKy2i--fiKLhi-2Ri--fiKLhi-iW; ALF=02_1726299515; WBPSESS=TBR_oyTVulE86-lRnHwg2rtw1naHxI9k8tR9ZoLtJ3Z3-NS47rcTmRmYPe5kf7yl8YzigAn1CTj6EHE0ePaVxqw_7HKfTKTga_idzgON31sFUitIbHPwzWAXyPgPeu9fvjL7fb5wuo9f3wtbF52pvw==; WBPSESS=TBR_oyTVulE86-lRnHwg2q2jDYpu9_UaaS0LXn-zrJpgu8aPR-Bbr8-X00wapxcjpUj7sqV-bxAobT4Ws8KmK6KF5ZLXNdUMGUYXNuRililn7vcEPfm59fxtjEaidvba",
+    "priority": "u=1, i",
+    "referer": "https://weibo.com/u/7707156952",
+    "sec-ch-ua": '"Not)A;Brand";v="99", "Microsoft Edge";v="127", "Chromium";v="127"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "server-version": "v2024.08.14.1",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0",
+    "x-requested-with": "XMLHttpRequest",
+    "x-xsrf-token": "_trnTcTwVtb6hEIAzIdFiP0V"
+}
 
+response = requests.get(url, headers=headers)
 
-def information_gain(data, attribute, label):
-    total_entropy = entropy(data[label])
-    values, counts = np.unique(data[attribute], return_counts=True)
-    weighted_entropy = sum((counts[i] / sum(counts)) * entropy(data[data[attribute] == values[i]][label])
-                           for i in range(len(values)))
-    return total_entropy - weighted_entropy
+# Print the response in a readable format
+print(response.json())
 
-
-def id3(data, attributes, label):
-    if len(np.unique(data[label])) == 1:
-        return np.unique(data[label])[0]
-
-    if len(attributes) == 0:
-        return Counter(data[label]).most_common(1)[0][0]
-
-    gains = [information_gain(data, attr, label) for attr in attributes]
-    best_attr = attributes[np.argmax(gains)]
-
-    tree = {best_attr: {}}
-
-    for value in np.unique(data[best_attr]):
-        sub_data = data[data[best_attr] == value]
-        subtree = id3(sub_data, [attr for attr in attributes if attr != best_attr], label)
-        tree[best_attr][value] = subtree
-
-    return tree
-
-
-def predict(tree, instance):
-    if not isinstance(tree, dict):
-        return tree
-    attr = next(iter(tree))
-    value = instance[attr]
-    return predict(tree[attr][value], instance)
-
-
-def main():
-    data = pd.DataFrame({
-        '天气': ['晴', '晴', '多云', '雨', '雨', '雨', '多云', '晴', '晴', '雨', '晴', '多云', '多云', '雨'],
-        '气温': ['热', '热', '热', '适中', '冷', '冷', '冷', '适中', '冷', '适中', '适中', '适中', '热', '适中'],
-        '湿度': ['高', '高', '高', '高', '正常', '正常', '正常', '高', '正常', '正常', '正常', '高', '正常', '高'],
-        '风': ['无风', '有风', '无风', '无风', '无风', '有风', '有风', '无风', '无风', '无风', '有风', '有风', '无风',
-               '有风'],
-        '类别': ['N', 'N', 'P', 'P', 'P', 'N', 'P', 'N', 'P', 'P', 'P', 'P', 'P', 'N']
-    })
-
-    attributes = ['天气', '气温', '湿度', '风']
-    label = '类别'
-
-    tree = id3(data, attributes, label)
-    print("决策树结构: ", tree)
-
-    test_instance = {'天气': '晴', '气温': '冷', '湿度': '高', '风': '无风'}
-    prediction = predict(tree, test_instance)
-    print("预测结果: ", prediction)
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    print()
