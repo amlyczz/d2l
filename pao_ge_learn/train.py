@@ -12,6 +12,7 @@ from torchvision.transforms import transforms
 
 from lenet5.model import LeNet
 from pao_ge_learn.alexnet.model import AlexNet
+from pao_ge_learn.vgg16.model import VGG16
 
 
 def train_valid_data_process(input_size=28, batch_size=128, train_data_rate=0.8):
@@ -149,8 +150,14 @@ if __name__ == '__main__':
     #     train_process = train_model_process(model, train_data_loader, valid_data_loader, 'lenet5/best_model.pth', 20)
     # plot(train_process)
 
-    model = AlexNet()
+    # model = AlexNet()
+    # train_data_loader, valid_data_loader = train_valid_data_process(input_size=227)
+    # train_process = train_model_process(model, train_data_loader, valid_data_loader, 'alexnet/best_model.pth',
+    #                                     num_epochs=20, lr=0.001)
+    # plot(train_process)
+
+    model = VGG16()
     train_data_loader, valid_data_loader = train_valid_data_process(input_size=227)
-    train_process = train_model_process(model, train_data_loader, valid_data_loader, 'alexnet/best_model.pth',
+    train_process = train_model_process(model, train_data_loader, valid_data_loader, 'vgg16/best_model.pth',
                                         num_epochs=20, lr=0.001)
     plot(train_process)
