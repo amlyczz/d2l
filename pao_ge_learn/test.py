@@ -1,15 +1,9 @@
-import copy
-import time
-
-import pandas as pd
 import torch
-from matplotlib import pyplot as plt
-from torch import nn
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import transforms
 
-from lenet5.model import LeNet
+from pao_ge_learn.alexnet.model import AlexNet
 
 
 def test_data_process(input_size=28, batch_size=128):
@@ -18,7 +12,7 @@ def test_data_process(input_size=28, batch_size=128):
                              transform=transforms.Compose([transforms.Resize(size=input_size), transforms.ToTensor()]),
                              download=True)
 
-    return DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True)
+    return DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=2)
 
 
 def test_model_process(model, test_data_loader, lr=0.001):
@@ -42,9 +36,13 @@ def test_model_process(model, test_data_loader, lr=0.001):
     print(f"test accuarcy: {test_accuarcy}")
 
 
-
 if __name__ == '__main__':
-    model = LeNet()
-    model.load_state_dict(torch.load('lenet5/best_model.pth'))
-    test_data_loader = test_data_process()
+    # model = LeNet()
+    # model.load_state_dict(torch.load('lenet5/best_model.pth'))
+    # test_data_loader = test_data_process()
+    # test_model_process(model, test_data_loader)
+
+    model = AlexNet()
+    model.load_state_dict(torch.load('alexnet/best_model.pth'))
+    test_data_loader = test_data_process(input_size=227)
     test_model_process(model, test_data_loader)

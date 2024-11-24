@@ -1,4 +1,5 @@
 import copy
+import os
 import time
 
 import pandas as pd
@@ -10,6 +11,7 @@ from torchvision.datasets import FashionMNIST
 from torchvision.transforms import transforms
 
 from lenet5.model import LeNet
+from pao_ge_learn.alexnet.model import AlexNet
 
 
 def train_valid_data_process(input_size=28, batch_size=128, train_data_rate=0.8):
@@ -17,17 +19,20 @@ def train_valid_data_process(input_size=28, batch_size=128, train_data_rate=0.8)
                               train=True,
                               transform=transforms.Compose([transforms.Resize(size=input_size), transforms.ToTensor()]),
                               download=True)
+    num_workers = min(4, os.cpu_count() // 2)
 
     train_data, valid_data = random_split(train_data, [round(train_data_rate * len(train_data)),
                                                        round((1 - train_data_rate) * len(train_data))])
-
-    train_data_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
-    valid_data_loader = DataLoader(dataset=valid_data, batch_size=batch_size, shuffle=True)
+    train_data_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    valid_data_loader = DataLoader(dataset=valid_data, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
     return train_data_loader, valid_data_loader
 
 
-def train_model_process(model, train_data_loader, valid_data_loader, num_epochs=10, lr=0.001):
+def train_model_process(model, train_data_loader, valid_data_loader, save_model_path, num_epochs=10, lr=0.001):
+    if save_model_path is None or not save_model_path.strip():
+        raise ValueError("save_model_path is None!")
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     optimizer = torch.optim.Adam(model.parameters(), lr)
     criterion = nn.CrossEntropyLoss()
@@ -110,36 +115,42 @@ def train_model_process(model, train_data_loader, valid_data_loader, num_epochs=
         print(f"训练和验证耗费的时间: {time_use // 60:.0f}m {time_use % 60:.0f}s")
         print("------------------------")
     model.load_state_dict(best_model_param)
-    torch.save(model.state_dict(), 'lenet5/best_model.pth')
+    torch.save(model.state_dict(), save_model_path)
 
     return pd.DataFrame(data={"epoch": range(num_epochs),
                               "train_loss": train_loss_list,
                               "valid_loss": valid_loss_list,
-                              "train_accuarcy": train_acc_list,
-                              "valid_accuarcy": valid_acc_list})
+                              "train_accuracy": train_acc_list,
+                              "valid_accuracy": valid_acc_list})
 
 
 def plot(train_process):
     plt.figure(figsize=(12, 4))
     plt.subplot(1, 2, 1)
     plt.plot(train_process["epoch"], train_process["train_loss"], 'ro-', label="train loss")
-    plt.plot(train_process["epoch"], train_process["valid_loss"], 'bs-', label="valid_loss")
+    plt.plot(train_process["epoch"], train_process["valid_loss"], 'bs-', label="valid loss")
     plt.legend()
     plt.xlabel("epoch")
     plt.ylabel("loss")
 
     plt.subplot(1, 2, 2)
-    plt.plot(train_process["epoch"], train_process["train_accuarcy"], 'ro-', label="train_accuarcy")
-    plt.plot(train_process["epoch"], train_process["valid_accuarcy"], 'bs-', label="valid_accuarcy")
+    plt.plot(train_process["epoch"], train_process["train_accuracy"], 'ro-', label="train accuracy")
+    plt.plot(train_process["epoch"], train_process["valid_accuracy"], 'bs-', label="valid accuracy")
     plt.legend()
     plt.xlabel("epoch")
-    plt.ylabel("accuarcy")
+    plt.ylabel("accuracy")
 
     plt.show()
 
 
 if __name__ == '__main__':
-    model = LeNet()
-    train_data_loader, valid_data_loader = train_valid_data_process()
-    train_process = train_model_process(model, train_data_loader, valid_data_loader, 20)
+    # model = LeNet()
+    # train_data_loader, valid_data_loader = train_valid_data_process()
+    #     train_process = train_model_process(model, train_data_loader, valid_data_loader, 'lenet5/best_model.pth', 20)
+    # plot(train_process)
+
+    model = AlexNet()
+    train_data_loader, valid_data_loader = train_valid_data_process(input_size=227)
+    train_process = train_model_process(model, train_data_loader, valid_data_loader, 'alexnet/best_model.pth',
+                                        num_epochs=20, lr=0.001)
     plot(train_process)
