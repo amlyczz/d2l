@@ -67,7 +67,13 @@ class VGG16(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal(m.weight,nonlinearity='relu')
+                nn.init.kaiming_normal(m.weight, nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         x = self.block1(x)
@@ -78,6 +84,7 @@ class VGG16(nn.Module):
         x = self.block6(x)
 
         return x
+
 
 if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
