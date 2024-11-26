@@ -36,7 +36,7 @@ class Inception(nn.Module):
 
 
 class GoogLeNet(nn.Module):
-    def __init__(self, inception):
+    def __init__(self):
         super(GoogLeNet, self).__init__()
         self.b1 = nn.Sequential(
             # in: 1*224*224 out: 64*112*112
@@ -55,3 +55,45 @@ class GoogLeNet(nn.Module):
             # out: 192*28*28
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         )
+        self.b3 = nn.Sequential(
+            # out: 256*28*28
+            Inception(192, 64, (96, 128), (16, 32), 32),
+            # out: 480*28*28
+            Inception(256, 128, (128, 192), (32, 96), 64),
+            # out: 480*14*14
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        )
+        self.b4 = nn.Sequential(
+            # out: 512*14*14
+            Inception(480, 192, (96, 208), (16, 48), 64),
+            # out: 512*14*14
+            Inception(512, 160, (112, 224), (24, 64), 64),
+            # out: 512*14*14
+            Inception(512, 128, (128, 256), (24, 64), 64),
+            # out: 528*14*14
+            Inception(512, 112, (128, 288), (32, 64), 64),
+            # out: 832*14*14
+            Inception(528, 256, (160, 320), (32, 128), 128),
+            # out: 832*7*7
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        )
+        self.b5 = nn.Sequential(
+            # out: 832*7*7
+            Inception(832, 256, (160, 320), (32, 128), 32),
+            # out: 1024*14*14
+            Inception(832, 384, (192, 384), (48, 128), 128),
+            # out: 1024*1*1 全局部平均池化
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Flatten(),
+            nn.Linear(1024, 10)
+        )
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal(m.weight, mode="fan_out", nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
