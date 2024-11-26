@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 from torchsummary import summary
-import torch.nn.functional as F
 
 
 class Inception(nn.Module):
@@ -17,7 +16,7 @@ class Inception(nn.Module):
         self.c3_1 = nn.Conv2d(in_channels=in_channels, out_channels=c3[0], kernel_size=1)
         self.c3_2 = nn.Conv2d(in_channels=c3[0], out_channels=c3[1], kernel_size=5, padding=2)
 
-        self.p4_1 = nn.MaxPool2d(kernel_size=3, padding=1)
+        self.p4_1 = nn.MaxPool2d(kernel_size=3, padding=1, stride=1)
         self.c4_2 = nn.Conv2d(in_channels=in_channels, out_channels=c4, kernel_size=1)
 
     def forward(self, x):
@@ -79,7 +78,7 @@ class GoogLeNet(nn.Module):
         )
         self.b5 = nn.Sequential(
             # out: 832*7*7
-            Inception(832, 256, (160, 320), (32, 128), 32),
+            Inception(832, 256, (160, 320), (32, 128), 128),
             # out: 1024*14*14
             Inception(832, 384, (192, 384), (48, 128), 128),
             # out: 1024*1*1 全局部平均池化
@@ -97,3 +96,17 @@ class GoogLeNet(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        x = self.b1(x)
+        x = self.b2(x)
+        x = self.b3(x)
+        x = self.b4(x)
+        x = self.b5(x)
+        return x
+
+
+if __name__ == '__main__':
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = GoogLeNet().to(device)
+    print(summary(model, (1, 224, 224)))

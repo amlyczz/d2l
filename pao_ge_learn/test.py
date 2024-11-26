@@ -4,6 +4,7 @@ from torchvision.datasets import FashionMNIST
 from torchvision.transforms import transforms
 
 from pao_ge_learn.alexnet.model import AlexNet
+from pao_ge_learn.googlenet.model import GoogLeNet
 
 
 def test_data_process(input_size=28, batch_size=128):
@@ -42,7 +43,7 @@ if __name__ == '__main__':
     # test_data_loader = test_data_process()
     # test_model_process(model, test_data_loader)
 
-    model = AlexNet()
-    model.load_state_dict(torch.load('alexnet/best_model.pth'))
-    test_data_loader = test_data_process(input_size=227)
+    model = GoogLeNet()
+    model.load_state_dict(torch.load('googlenet/best_model.pth'))
+    test_data_loader = test_data_process(input_size=224)
     test_model_process(model, test_data_loader)
