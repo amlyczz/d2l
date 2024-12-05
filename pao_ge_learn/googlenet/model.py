@@ -39,7 +39,7 @@ class GoogLeNet(nn.Module):
         super(GoogLeNet, self).__init__()
         self.b1 = nn.Sequential(
             # in: 1*224*224 out: 64*112*112
-            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=7, stride=2, padding=3),
+            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, stride=2, padding=3),
             nn.ReLU(),
             # out: 64*56*56
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),

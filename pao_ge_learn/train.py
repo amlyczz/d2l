@@ -10,10 +10,7 @@ from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import transforms
 
-from lenet5.model import LeNet
-from pao_ge_learn.alexnet.model import AlexNet
 from pao_ge_learn.googlenet.model import GoogLeNet
-from pao_ge_learn.vgg16.model import VGG16
 
 
 def train_valid_data_process(input_size=28, batch_size=128, train_data_rate=0.8):
@@ -116,6 +113,9 @@ def train_model_process(model, train_data_loader, valid_data_loader, save_model_
         time_use = time.time() - since
         print(f"训练和验证耗费的时间: {time_use // 60:.0f}m {time_use % 60:.0f}s")
         print("------------------------")
+
+        torch.save(model.state_dict(), save_model_path)
+
     model.load_state_dict(best_model_param)
     torch.save(model.state_dict(), save_model_path)
 
